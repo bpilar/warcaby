@@ -53,17 +53,63 @@ std::pair<std::pair<int, int>, std::pair<int, int>> mvToPP(std::string move)
     return std::make_pair(pFrom, pTo);
 }
 
-void printBoard(char board[8][8])
+void printBoard(char board[8][8], int y, int x)
 {
     for (int j = 0; j < 8; j++)
     {
         move(j+3,0);
         for (int i = 0; i < 8; i++)
         {
-            printw("|%c", board[j][i]);
+            if (j == y && i == x)
+            {
+                switch (board[j][i])
+                {
+                case 'w':
+                    printw("|W");
+                    break;
+                case 'v':
+                    printw("|V");
+                    break;
+                case 'b':
+                    printw("|B");
+                    break;
+                case 'a':
+                    printw("|A");
+                    break;
+                case ' ':
+                    printw("|.");
+                    break;
+                default:
+                    break;
+                }
+            }
+            else
+            {
+                printw("|%c", board[j][i]);
+            }
+            
         }
-        printw("|\n");
+        printw("|");
     }
+}
+
+void printScreen(char board[8][8], bool white, int y, int x)
+{
+    clear();
+    move(0,4);
+    printw("Draughts\n");
+    move(1,0);
+    if (white)
+    {
+        printw("%s", "White's turn:");
+    }
+    else
+    {
+        printw("%s", "Black's turn:");
+    }
+    printBoard(board, y, x);
+    move(12,0);
+    refresh();
 }
 
 void initBoard(char board[8][8])
@@ -191,7 +237,7 @@ std::vector<std::string> findCaptures(char board[8][8], int y, int x)
             {
                 if ((board[y + 1][x - 1] == 'w' || board[y + 1][x - 1] == 'v') &&
                     (board[y + 2][x - 2] == ' '))
-                    captures.push_back(intToDis(y, x) + "to" + intToDis(y + 1, x - 1));
+                    captures.push_back(intToDis(y, x) + "to" + intToDis(y + 2, x - 2));
             }
             if (x <= 5)
             {
@@ -284,31 +330,63 @@ int main()
 
     char board[8][8];
     initBoard(board);
-    printBoard(board);
-
+    int posY = 0, posX = 0;
+    //printBoard(board, posY, posX);
     
 
     bool white = true;
     while (true)
     {
-        move(0,4);
-        printw("Draughts\n");
-        move(1,0);
-        if (white)
-        {
-            printw("%s", "White's turn:");
-        }
-        else
-        {
-            printw("%s", "Black's turn:");
-        }
-        printBoard(board);
-        move(12,0);
-        refresh();
+        printScreen(board, white, posY, posX);
 
-        char mv[10];
-        scanf("%s", mv);
-        std::string sMv(mv);
+        //char mv[10];
+        //scanf("%s", mv);
+        //std::string sMv(mv);
+
+        cbreak();
+        noecho();
+        keypad(stdscr, TRUE);
+        int countPos = 0;
+        std::string sMv = "";
+        while (countPos < 2)
+        {
+            int key;
+            clrtoeol();
+            key = getch();
+            switch (key)
+            {
+            case KEY_UP:
+                posY--;
+                break;
+            case KEY_DOWN   :
+                posY++;
+                break;
+            case KEY_LEFT:
+                posX--;
+                break;
+            case KEY_RIGHT:
+                posX++;
+                break;
+            case 10:
+                sMv += intToDis(posY, posX);
+                if (countPos == 0)
+                {
+                    sMv += "to";
+                }
+                countPos++;
+                break;
+            default:
+               break;
+            }
+            if (posY < 0) posY = 0;
+            if (posY > 7) posY = 7;
+            if (posX < 0) posX = 0;
+            if (posX > 7) posX = 7;
+            printScreen(board, white, posY, posX);
+            printw("%s\n", sMv.c_str());
+            refresh();
+        }
+        nocbreak();
 
         std::vector<std::pair<int, int>> pieces = findPieces(board, white);
         std::vector<std::string> captures;
@@ -319,12 +397,18 @@ int main()
         }
         if (captures.size() > 0)
         {
+            printw("Captures: %d\n", captures.size());
+            printw("%s\n", captures[0].c_str());
+            refresh();
+            refresh();
+            getch();
             if (std::find(captures.begin(), captures.end(), sMv) != captures.end())
             {
                 doMove(board, sMv);
-                std::pair<std::pair<int, int>, std::pair<int, int>> ppMv = mvToPP(mv);
+                std::pair<std::pair<int, int>, std::pair<int, int>> ppMv = mvToPP(sMv);
                 board[(ppMv.first.first + ppMv.second.first) / 2][(ppMv.first.second + ppMv.second.second) / 2] = ' ';
-                white = !white;
+                std::vector<std::string> nextCaptures = findCaptures(board, ppMv.second.first, ppMv.second.second);
+                if (nextCaptures.size() > 0) white = !white;
             }
             else
             {
@@ -350,6 +434,7 @@ int main()
         clear();
     }
 
+    refresh();
     getch();
     endwin();
 
