@@ -1,18 +1,19 @@
-#define _CRT_SECURE_NO_WARNINGS
-//#include <pthread.h>
+//#define _CRT_SECURE_NO_WARNINGS
+ #include <pthread.h>
 #include <sys/types.h>
-//#include <sys/socket.h>
-//#include <netinet/in.h>
-//#include <netdb.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <unistd.h>
+ #include <unistd.h>
 #include <stdio.h>
-//#include <iostream>
+ #include <iostream>
 #include <utility>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 
 std::pair<int, int> disToInt(std::string dis)
@@ -294,7 +295,7 @@ int main()
             printf("%s", "Black:");
         }
         char mv[10];
-        scanf("%s", &mv);
+        scanf("%s", mv);
         std::string sMv(mv);
 
         std::vector<std::pair<int, int>> pieces = findPieces(board, white);
