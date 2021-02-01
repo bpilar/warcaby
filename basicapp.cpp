@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <ncurses.h>
 
 
 std::pair<int, int> disToInt(std::string dis)
@@ -56,11 +57,12 @@ void printBoard(char board[8][8])
 {
     for (int j = 0; j < 8; j++)
     {
+        move(j+3,0);
         for (int i = 0; i < 8; i++)
         {
-            printf("|%c", board[j][i]);
+            printw("|%c", board[j][i]);
         }
-        printf("|\n");
+        printw("|\n");
     }
 }
 
@@ -271,7 +273,8 @@ std::vector<std::string> findCaptures(char board[8][8], int y, int x)
 
 int main()
 {
-    printf("S :%s\n", "Hello World!\n");
+    initscr();
+    
     //printf("%d_%d\n", disToInt("H7").first, disToInt("H7").second);
     //std::string res = intToDis(1, 1);
     //char* cRes = new char[res.length() + 1];
@@ -283,17 +286,26 @@ int main()
     initBoard(board);
     printBoard(board);
 
+    
+
     bool white = true;
     while (true)
     {
+        move(0,4);
+        printw("Draughts\n");
+        move(1,0);
         if (white)
         {
-            printf("%s", "White:");
+            printw("%s", "White's turn:");
         }
         else
         {
-            printf("%s", "Black:");
+            printw("%s", "Black's turn:");
         }
+        printBoard(board);
+        move(12,0);
+        refresh();
+
         char mv[10];
         scanf("%s", mv);
         std::string sMv(mv);
@@ -312,11 +324,13 @@ int main()
                 doMove(board, sMv);
                 std::pair<std::pair<int, int>, std::pair<int, int>> ppMv = mvToPP(mv);
                 board[(ppMv.first.first + ppMv.second.first) / 2][(ppMv.first.second + ppMv.second.second) / 2] = ' ';
+                white = !white;
             }
             else
             {
-                if (white) printf("%s\n", "White loose");
-                else printf("%s\n", "Black loose");
+                if (white) printw("%s\n", "White loose");
+                else printw("%s\n", "Black loose");
+                break;
             }
         }
         else
@@ -327,13 +341,17 @@ int main()
             }
             else
             {
-                if (white) printf("%s\n", "White loose");
-                else printf("%s\n", "Black loose");
+                if (white) printw("%s\n", "White loose");
+                else printw("%s\n", "Black loose");
+                break;
             }
         }
         white = !white;
-        printBoard(board);
+        clear();
     }
+
+    getch();
+    endwin();
 
     //doMove(board, "B8toC8");
     //printBoard(board);
