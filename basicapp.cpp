@@ -317,6 +317,15 @@ std::vector<std::string> findCaptures(char board[8][8], int y, int x)
     return captures;
 }
 
+void kingsRow(char board[8][8])
+{
+    for (int i = 0; i < 8; i++)
+    {
+        if (board[0][i] == 'w') board[0][i] = 'v';
+        if (board[7][i] == 'b') board[7][i] = 'a';
+    }
+}
+
 int main()
 {
     initscr();
@@ -331,7 +340,7 @@ int main()
     char board[8][8];
     initBoard(board);
     int posY = 0, posX = 0;
-    //printBoard(board, posY, posX);
+    int countMoves = 0;
     
 
     bool white = true;
@@ -383,8 +392,6 @@ int main()
             if (posX < 0) posX = 0;
             if (posX > 7) posX = 7;
             printScreen(board, white, posY, posX);
-            printw("%s\n", sMv.c_str());
-            refresh();
         }
         nocbreak();
 
@@ -397,14 +404,10 @@ int main()
         }
         if (captures.size() > 0)
         {
-            printw("Captures: %d\n", captures.size());
-            printw("%s\n", captures[0].c_str());
-            refresh();
-            refresh();
-            getch();
             if (std::find(captures.begin(), captures.end(), sMv) != captures.end())
             {
                 doMove(board, sMv);
+                countMoves = 0;
                 std::pair<std::pair<int, int>, std::pair<int, int>> ppMv = mvToPP(sMv);
                 board[(ppMv.first.first + ppMv.second.first) / 2][(ppMv.first.second + ppMv.second.second) / 2] = ' ';
                 std::vector<std::string> nextCaptures = findCaptures(board, ppMv.second.first, ppMv.second.second);
@@ -430,6 +433,14 @@ int main()
                 break;
             }
         }
+
+        kingsRow(board);
+        countMoves++;
+        if (countMoves > 15)
+        {
+            printw("%s\n", "Draw");
+        }
+
         white = !white;
         clear();
     }
