@@ -33,6 +33,23 @@ std::string intToDis(int y, int x)
     return dis;
 }
 
+std::pair<std::pair<int, int>, std::pair<int, int>> mvToPP(std::string move)
+{
+    char* cMove = new char[move.length() + 1];
+    strcpy(cMove, move.c_str());
+    char fromY, fromX, toY, toX;
+    sscanf(cMove, "%c%cto%c%c", &fromY, &fromX, &toY, &toX);
+    std::string from = "";
+    std::string to = "";
+    from += fromY;
+    from += fromX;
+    to += toY;
+    to += toX;
+    std::pair<int, int> pFrom = disToInt(from);
+    std::pair<int, int> pTo = disToInt(to);
+    return std::make_pair(pFrom, pTo);
+}
+
 void printBoard(char board[8][8])
 {
     for (int j = 0; j < 8; j++)
@@ -67,22 +84,30 @@ void initBoard(char board[8][8])
 
 void doMove(char board[8][8], std::string move)
 {
-    char* cMove = new char[move.length() + 1];
-    strcpy(cMove, move.c_str());
-    char fromY, fromX, toY, toX;
-    sscanf(cMove, "%c%cto%c%c", &fromY, &fromX, &toY, &toX);
-    std::string from = "";
-    std::string to = "";
-    from += fromY;
-    from += fromX;
-    to += toY;
-    to += toX;
-    std::pair<int, int> pFrom = disToInt(from);
-    std::pair<int, int> pTo = disToInt(to);
+    std::pair<std::pair<int, int>, std::pair<int, int>> ppMove = mvToPP(move);
+    std::pair<int, int> pFrom = ppMove.first;
+    std::pair<int, int> pTo = ppMove.second;
     char color = board[pFrom.first][pFrom.second];
     board[pFrom.first][pFrom.second] = ' ';
     board[pTo.first][pTo.second] = color;
 }
+
+//bool checkMove(char board[8][8], std::string move, bool white)
+//{
+//    char* cMove = new char[move.length() + 1];
+//    strcpy(cMove, move.c_str());
+//    char fromY, fromX, toY, toX;
+//    sscanf(cMove, "%c%cto%c%c", &fromY, &fromX, &toY, &toX);
+//    std::string from = "";
+//    std::string to = "";
+//    from += fromY;
+//    from += fromX;
+//    to += toY;
+//    to += toX;
+//    std::pair<int, int> pFrom = disToInt(from);
+//    std::pair<int, int> pTo = disToInt(to);
+//    if()
+//}
 
 int main()
 {
