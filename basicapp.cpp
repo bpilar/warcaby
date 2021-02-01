@@ -55,9 +55,11 @@ std::pair<std::pair<int, int>, std::pair<int, int>> mvToPP(std::string move)
 
 void printBoard(char board[8][8], int y, int x)
 {
+    move(2, 0);
+    printw("                 ");
     for (int j = 0; j < 8; j++)
     {
-        move(j+3,0);
+        move(j+3, 0);
         for (int i = 0; i < 8; i++)
         {
             if (j == y && i == x)
@@ -77,7 +79,7 @@ void printBoard(char board[8][8], int y, int x)
                     printw("|A");
                     break;
                 case ' ':
-                    printw("|.");
+                    printw("|*");
                     break;
                 default:
                     break;
@@ -95,9 +97,15 @@ void printBoard(char board[8][8], int y, int x)
 
 void printScreen(char board[8][8], bool white, int y, int x)
 {
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    init_pair(2, COLOR_BLUE, COLOR_BLACK);
+    init_pair(3, COLOR_GREEN, COLOR_BLACK);
+    init_pair(4, COLOR_YELLOW, COLOR_BLACK);
+    attrset(COLOR_PAIR(2));
     clear();
-    move(0,4);
-    printw("Draughts\n");
+    move(0,6);
+    printw("English draughts\n");
+    attrset(COLOR_PAIR(3));
     move(1,0);
     if (white)
     {
@@ -107,7 +115,16 @@ void printScreen(char board[8][8], bool white, int y, int x)
     {
         printw("%s", "Black's turn:");
     }
+    attrset(COLOR_PAIR(1));
+    attron(A_UNDERLINE);
     printBoard(board, y, x);
+    attroff(A_UNDERLINE);
+    attrset(COLOR_PAIR(2));
+    move(5, 20); printw("w - white's man");
+    move(6, 20); printw("v - white's king");
+    move(7, 20); printw("b - black's man");
+    move(8, 20); printw("a - black's king");
+    attrset(COLOR_PAIR(4));
     move(12,0);
     refresh();
 }
@@ -329,6 +346,7 @@ void kingsRow(char board[8][8])
 int main()
 {
     initscr();
+    start_color();
     
     //printf("%d_%d\n", disToInt("H7").first, disToInt("H7").second);
     //std::string res = intToDis(1, 1);
