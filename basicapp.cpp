@@ -95,7 +95,7 @@ void printBoard(char board[8][8], int y, int x)
     }
 }
 
-void printScreen(char board[8][8], bool white, int y, int x)
+void printScreen(char board[8][8], bool white, int y, int x, std::string address, std::string port)
 {
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     init_pair(2, COLOR_BLUE, COLOR_BLACK);
@@ -120,13 +120,50 @@ void printScreen(char board[8][8], bool white, int y, int x)
     printBoard(board, y, x);
     attroff(A_UNDERLINE);
     attrset(COLOR_PAIR(2));
-    move(5, 20); printw("w - white's man");
-    move(6, 20); printw("v - white's king");
-    move(7, 20); printw("b - black's man");
-    move(8, 20); printw("a - black's king");
+    move(4, 20); printw("w - white's man");
+    move(5, 20); printw("v - white's king");
+    move(6, 20); printw("b - black's man");
+    move(7, 20); printw("a - black's king");
+    move(8, 20); printw("HOME to reconnect");
+    move(9, 20); printw("END to quit");
+    move(11,0); printw("Connected to - %s:%s", address.c_str(), port.c_str());
     attrset(COLOR_PAIR(4));
     move(12,0);
     refresh();
+}
+
+std::pair<std::string,std::string> getConParameters()
+{
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    nocbreak();
+    echo();
+    clear();
+    nodelay(stdscr,FALSE);
+    char cAddr[20];
+    char cPort[20];
+
+    move(0,0);
+    attrset(COLOR_PAIR(2));
+    printw("%s", "Address:");
+    attrset(COLOR_PAIR(1));
+    refresh();
+    scanf("%s", cAddr);
+    refresh();
+
+    move(1,0);
+    attrset(COLOR_PAIR(2));
+    printw("%s", "Port:");
+    attrset(COLOR_PAIR(1));
+    refresh();
+    scanf("%s", cPort);
+    refresh();
+    
+    std::string address(cAddr);
+    std::string port(cPort);
+    cbreak();
+    noecho();
+    return std::make_pair(address,port);
 }
 
 void initBoard(char board[8][8])
@@ -345,8 +382,11 @@ void kingsRow(char board[8][8])
 
 int main()
 {
-    initscr();
-    start_color();
+initscr();
+start_color();
+cbreak();
+noecho();
+keypad(stdscr, TRUE);
     
     //printf("%d_%d\n", disToInt("H7").first, disToInt("H7").second);
     //std::string res = intToDis(1, 1);
@@ -354,25 +394,39 @@ int main()
     //strcpy(cRes, res.c_str());
     //printf("%s\n", cRes);
 
+bool connected = false;
+bool keepPlaying = true;
 
+while(keepPlaying)
+{
     char board[8][8];
     initBoard(board);
     int posY = 0, posX = 0;
     int countMoves = 0;
-    
+    bool white = false;
+    std::string address = "jakis";
+    std::string port = "errur";
 
-    bool white = true;
-    while (true)
+    if (!connected)
     {
-        printScreen(board, white, posY, posX);
+        std::pair<std::string,std::string> conParameters = getConParameters();
+        address = conParameters.first;
+        port = conParameters.second;
+        connected = true;
+    }
+    
+    //HERE CONNECT
+
+    while (connected)
+    {
+        printScreen(board, white, posY, posX, address, port);
 
         //char mv[10];
         //scanf("%s", mv);
         //std::string sMv(mv);
 
-        cbreak();
-        noecho();
-        keypad(stdscr, TRUE);
+        //cbreak();
+        //noecho();
         int countPos = 0;
         std::string sMv = "";
         while (countPos < 2)
@@ -402,16 +456,27 @@ int main()
                 }
                 countPos++;
                 break;
+            case KEY_HOME:
+                connected = false;
+                printw("%s\n", "Reconnect");
+                break;
+            case KEY_END:
+                connected = false;
+                keepPlaying = false;
+                printw("%s\n", "Disconnect");
+                break;
             default:
                break;
             }
+            if(!connected) break;
             if (posY < 0) posY = 0;
             if (posY > 7) posY = 7;
             if (posX < 0) posX = 0;
             if (posX > 7) posX = 7;
-            printScreen(board, white, posY, posX);
+            printScreen(board, white, posY, posX, address, port);
         }
-        nocbreak();
+        //nocbreak();
+        if(!connected) break;
 
         std::vector<std::pair<int, int>> pieces = findPieces(board, white);
         std::vector<std::string> captures;
@@ -462,10 +527,23 @@ int main()
         white = !white;
         clear();
     }
-
     refresh();
-    getch();
-    endwin();
+    //HERE DISCONNECT
+    connected = false;
+    int key = getch();
+    if (key == KEY_END)
+    {
+        keepPlaying = false;
+    }
+    if (!keepPlaying)
+    {
+        printw("%s\n", "Quit");
+    }
+    
+}
+refresh();
+getch();
+endwin();
 
     //doMove(board, "B8toC8");
     //printBoard(board);

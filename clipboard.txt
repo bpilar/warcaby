@@ -1,0 +1,2 @@
+g++ basicapp.cpp -Wall -Wextra -lncurses
+
