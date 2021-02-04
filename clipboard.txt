@@ -1,3 +1,6 @@
+//kompilacja jednookienkowej
 g++ basicapp.cpp -Wall -Wextra -lncurses
+//kompilacja klienta
 g++ client.cpp -o client.out -Wall -Wextra -lncurses
-g++ server.cpp -o server.out -Wall -Wextra -lncurses -pthread
+//kompilacja servera
+g++ server.cpp -o server.out -Wall -Wextra -pthread
