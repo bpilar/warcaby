@@ -15,6 +15,8 @@
 #include <vector>
 #include <algorithm>
 #include <ncurses.h>
+#include <syscall.h>
+#include <arpa/inet.h>
 
 
 std::pair<int, int> disToInt(std::string dis)
@@ -95,7 +97,7 @@ void printBoard(char board[8][8], int y, int x)
     }
 }
 
-void printScreen(char board[8][8], bool white, int y, int x, std::string address, std::string port)
+void printScreen(char board[8][8], bool white, bool meWhite, int y, int x, std::string address, std::string port)
 {
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     init_pair(2, COLOR_BLUE, COLOR_BLACK);
@@ -107,6 +109,14 @@ void printScreen(char board[8][8], bool white, int y, int x, std::string address
     printw("English draughts\n");
     attrset(COLOR_PAIR(3));
     move(1,0);
+	if (meWhite)
+    {
+        printw("%s", "Playing white   ");
+    }
+    else
+    {
+        printw("%s", "Playing black   ");
+    }
     if (white)
     {
         printw("%s", "White's turn:");
@@ -194,6 +204,10 @@ void doMove(char board[8][8], std::string move)
     char color = board[pFrom.first][pFrom.second];
     board[pFrom.first][pFrom.second] = ' ';
     board[pTo.first][pTo.second] = color;
+    if((abs(pFrom.first-pTo.first) == 2) && (abs(pFrom.second-pTo.second) == 2))
+    {
+        board[(pFrom.first+pTo.first)/2][(pFrom.second+pTo.second)/2] = ' ';
+    }
 }
 
 bool checkMove(char board[8][8], std::string move, bool white)
@@ -382,11 +396,11 @@ void kingsRow(char board[8][8])
 
 int main()
 {
-initscr();
-start_color();
-cbreak();
-noecho();
-keypad(stdscr, TRUE);
+	initscr();
+	start_color();
+	cbreak();
+	noecho();
+	keypad(stdscr, TRUE);
     
     //printf("%d_%d\n", disToInt("H7").first, disToInt("H7").second);
     //std::string res = intToDis(1, 1);
@@ -394,158 +408,174 @@ keypad(stdscr, TRUE);
     //strcpy(cRes, res.c_str());
     //printf("%s\n", cRes);
 
-bool connected = false;
-bool keepPlaying = true;
+	bool connected = false;
+	bool keepPlaying = true;
 
-while(keepPlaying)
-{
-    char board[8][8];
-    initBoard(board);
-    int posY = 0, posX = 0;
-    int countMoves = 0;
-    bool white = false;
-    std::string address = "jakis";
-    std::string port = "errur";
+	while(keepPlaying)
+	{
+		struct sockaddr_in sa;
 
-    if (!connected)
-    {
-        std::pair<std::string,std::string> conParameters = getConParameters();
-        address = conParameters.first;
-        port = conParameters.second;
-        printw("%s\n", "Connecting");
-        //HERE CONNECT
-        connected = true;
-    }
-    
-
-    while (connected)
-    {
-        printScreen(board, white, posY, posX, address, port);
-
-        //char mv[10];
-        //scanf("%s", mv);
-        //std::string sMv(mv);
-
-        //cbreak();
-        //noecho();
-        int countPos = 0;
-        std::string sMv = "";
-        while (countPos < 2)
+		int server_fd = socket(AF_INET,SOCK_STREAM,0);
+        if (server_fd == -1)
         {
-            int key;
-            clrtoeol();
-            key = getch();
-            switch (key)
-            {
-            case KEY_UP:
-                posY--;
-                break;
-            case KEY_DOWN   :
-                posY++;
-                break;
-            case KEY_LEFT:
-                posX--;
-                break;
-            case KEY_RIGHT:
-                posX++;
-                break;
-            case 10:
-                sMv += intToDis(posY, posX);
-                if (countPos == 0)
-                {
-                    sMv += "to";
-                }
-                countPos++;
-                break;
-            case KEY_HOME:
-                connected = false;
-                printw("%s\n", "Reconnect");
-                break;
-            case KEY_END:
-                connected = false;
-                keepPlaying = false;
-                printw("%s\n", "Disconnect");
-                break;
-            default:
-               break;
-            }
-            if(!connected) break;
-            if (posY < 0) posY = 0;
-            if (posY > 7) posY = 7;
-            if (posX < 0) posX = 0;
-            if (posX > 7) posX = 7;
-            printScreen(board, white, posY, posX, address, port);
-        }
-        //nocbreak();
-        if(!connected) break;
-
-        std::vector<std::pair<int, int>> pieces = findPieces(board, white);
-        std::vector<std::string> captures;
-        for (std::pair<int, int> i : pieces)
-        {
-            std::vector<std::string> newCaptures = findCaptures(board, i.first, i.second);
-            captures.insert(captures.end(), newCaptures.begin(), newCaptures.end());
-        }
-        if (captures.size() > 0)
-        {
-            if (std::find(captures.begin(), captures.end(), sMv) != captures.end())
-            {
-                doMove(board, sMv);
-                countMoves = 0;
-                std::pair<std::pair<int, int>, std::pair<int, int>> ppMv = mvToPP(sMv);
-                board[(ppMv.first.first + ppMv.second.first) / 2][(ppMv.first.second + ppMv.second.second) / 2] = ' ';
-                std::vector<std::string> nextCaptures = findCaptures(board, ppMv.second.first, ppMv.second.second);
-                if (nextCaptures.size() > 0) white = !white;
-            }
-            else
-            {
-                if (white) printw("%s\n", "White loose");
-                else printw("%s\n", "Black loose");
-                break;
-            }
-        }
-        else
-        {
-            if (checkMove(board, sMv, white))
-            {
-                doMove(board, sMv);
-            }
-            else
-            {
-                if (white) printw("%s\n", "White loose");
-                else printw("%s\n", "Black loose");
-                break;
-            }
-        }
-
-        kingsRow(board);
-        countMoves++;
-        if (countMoves > 15)
-        {
-            printw("%s\n", "Draw");
+            printw("%s\n", "socket err");
             break;
         }
+        //err check
 
-        white = !white;
-        clear();
-    }
-    refresh();
-    //HERE DISCONNECT
-    connected = false;
-    int key = getch();
-    if (key == KEY_END)
-    {
-        keepPlaying = false;
-    }
-    if (!keepPlaying)
-    {
-        printw("%s\n", "Quit");
-    }
-    
-}
-refresh();
-getch();
-endwin();
+		char sendBuff[10];
+		char recvBuff[10+1];
+
+
+		char board[8][8];
+		initBoard(board);
+		int posY = 0, posX = 0;
+		bool white = false;
+        bool meWhite = false;
+		std::string address = "jakis";
+		std::string port = "errur";
+
+		if (!connected)
+		{
+			std::pair<std::string,std::string> conParameters = getConParameters();
+			address = conParameters.first;
+			port = conParameters.second;
+
+			memset(&sa, 0 , sizeof(sa));
+			sa.sin_family = AF_INET;
+			    char* cPort = new char[port.length() + 1];
+                strcpy(cPort, port.c_str());
+			sa.sin_port = htons(atoi(cPort));
+                char* cAddress = new char[address.length() + 1];
+                strcpy(cAddress, address.c_str());
+			inet_pton(AF_INET,cAddress,&(sa.sin_addr));
+
+			int connRes = connect(server_fd, (struct sockaddr*) &sa, sizeof(struct sockaddr));
+            if (connRes != 0)
+            {
+                printw("%s,%d\n", "Connect err", connRes);
+                break;
+            }
+
+			printw("%s\n", "Connecting");
+            refresh();
+            //todo
+            recv(server_fd,recvBuff,sizeof(recvBuff),0);
+            std::string myColor(recvBuff);
+            if (!myColor.compare("white_"))
+            {
+                meWhite = true;
+            }
+			connected = true;
+            printw("%s\n", "Connected");
+            refresh();
+		}
+		
+
+		while (connected)
+		{
+			printScreen(board, white, meWhite, posY, posX, address, port);
+			
+
+			//char mv[10];
+			//scanf("%s", mv);
+			//std::string sMv(mv);
+
+            if (white == meWhite)
+            {
+                int countPos = 0;
+                std::string sMv = "";
+                while (countPos < 2)
+                {
+                    int key;
+                    clrtoeol();
+                    key = getch();
+                    switch (key)
+                    {
+                    case KEY_UP:
+                        posY--;
+                        break;
+                    case KEY_DOWN:
+                        posY++;
+                        break;
+                    case KEY_LEFT:
+                        posX--;
+                        break;
+                    case KEY_RIGHT:
+                        posX++;
+                        break;
+                    case 10:
+                        sMv += intToDis(posY, posX);
+                        if (countPos == 0)
+                        {
+                            sMv += "to";
+                        }
+                        countPos++;
+                        break;
+                    case KEY_HOME:
+                        connected = false;
+                        printw("%s\n", "Reconnect");
+                        break;
+                    case KEY_END:
+                        connected = false;
+                        keepPlaying = false;
+                        printw("%s\n", "Disconnect");
+                        break;
+                    default:
+                        break;
+                    }
+                    if(!connected) break;
+                    if (posY < 0) posY = 0;
+                    if (posY > 7) posY = 7;
+                    if (posX < 0) posX = 0;
+                    if (posX > 7) posX = 7;
+                    printScreen(board, white, meWhite, posY, posX, address, port);
+                }
+                if(!connected) break;
+                char* cMv = new char[sMv.length() + 1];
+                strcpy(cMv, sMv.c_str());
+                sprintf(sendBuff,"%s", cMv);
+                send(server_fd,sendBuff,strlen(sendBuff)+1,0);
+                doMove(board, sMv);
+            }
+            else
+            {
+                //todo
+                recv(server_fd,recvBuff,sizeof(recvBuff),0);
+                printw("    %s\n", recvBuff);
+                refresh();
+                recv(server_fd,recvBuff,sizeof(recvBuff),0);
+                std::string sMv(recvBuff);
+                //check move or !taking!
+                doMove(board, sMv);
+            }
+
+			kingsRow(board);
+
+			white = !white;
+			clear();
+		}
+		refresh();
+
+        sprintf(sendBuff,"%s", "quit__");
+        send(server_fd,sendBuff,strlen(sendBuff)+1,0);
+		close(server_fd);
+
+		connected = false;
+		int key = getch();
+		if (key == KEY_END)
+		{
+			keepPlaying = false;
+		}
+		if (!keepPlaying)
+		{
+			printw("%s\n", "Quit");
+		}
+		
+	}
+	refresh();
+	getch();
+	endwin();
 
     //doMove(board, "B8toC8");
     //printBoard(board);
