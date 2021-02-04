@@ -475,10 +475,8 @@ int main(int argc, char **argv)
 		recv(curr_fd,recvBuff,sizeof(recvBuff),0);
         printf("recived:%s\n", recvBuff);
 		std::string sMv(recvBuff);
-		sprintf(sendBuff,"%s", "wait__");
-		//todo
-        printf("sending:%s\n", sendBuff);
-		send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+
+        bool isOK = false;
 
         std::vector<std::pair<int, int>> pieces = findPieces(board, white);
         std::vector<std::string> captures;
@@ -492,6 +490,7 @@ int main(int argc, char **argv)
             if (std::find(captures.begin(), captures.end(), sMv) != captures.end())
             {
                 doMove(board, sMv);
+                isOK = true;
                 countMoves = 0;
                 std::pair<std::pair<int, int>, std::pair<int, int>> ppMv = mvToPP(sMv);
                 board[(ppMv.first.first + ppMv.second.first) / 2][(ppMv.first.second + ppMv.second.second) / 2] = ' ';
@@ -500,9 +499,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                if (white) printf("%s\n", "White loose");
-                else printf("%s\n", "Black loose");
-                break;
+                isOK = false;
             }
         }
         else
@@ -510,12 +507,11 @@ int main(int argc, char **argv)
             if (checkMove(board, sMv, white))
             {
                 doMove(board, sMv);
+                isOK = true;
             }
             else
             {
-                if (white) printf("%s\n", "White loose");
-                else printf("%s\n", "Black loose");
-                break;
+                isOK = false;
             }
         }
 
@@ -523,9 +519,32 @@ int main(int argc, char **argv)
         countMoves++;
         if (countMoves > 15)
         {
-            printf("%s\n", "Draw");
+            sprintf(sendBuff,"%s", "draw__");
+		    //todo
+            printf("sending:%s\n", sendBuff);
+		    send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+            send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
 			break;
         }
+
+        if (!isOK)
+        {
+            if (white) sprintf(sendBuff,"%s", "blaWin");
+            else sprintf(sendBuff,"%s", "whiWin");
+		    //todo
+            printf("sending:%s\n", sendBuff);
+		    send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+            send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
+            break;
+        }
+        else
+        {
+            sprintf(sendBuff,"%s", "wait__");
+		    //todo
+            printf("sending:%s\n", sendBuff);
+		    send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+        }
+        
 
 		char* cMv = new char[sMv.length() + 1];
         strcpy(cMv, sMv.c_str());

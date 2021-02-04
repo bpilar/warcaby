@@ -542,10 +542,45 @@ int main()
             {
                 //todo
                 recv(server_fd,recvBuff,sizeof(recvBuff),0);
+                std::string recvdMsg(recvBuff);
+                if (!recvdMsg.compare("blaWin"))
+                {
+                    if(meWhite) printw("  Lost :(\n");
+                    else printw("  Victory :)\n");
+                    break;
+                }
+                if (!recvdMsg.compare("whiWin"))
+                {
+                    if(meWhite) printw("  Victory :)\n");
+                    else printw("  Lost :(\n");
+                    break;
+                }
+                if (!recvdMsg.compare("draw__"))
+                {
+                    printw("  Draw ---\n");
+                    break;
+                }
                 printw("    %s\n", recvBuff);
                 refresh();
                 recv(server_fd,recvBuff,sizeof(recvBuff),0);
                 std::string sMv(recvBuff);
+                if (!sMv.compare("blaWin"))
+                {
+                    if(meWhite) printw("  Lost :(\n");
+                    else printw("  Victory :)\n");
+                    break;
+                }
+                if (!sMv.compare("whiWin"))
+                {
+                    if(meWhite) printw("  Victory :)\n");
+                    else printw("  Lost :(\n");
+                    break;
+                }
+                if (!sMv.compare("draw__"))
+                {
+                    printw("  Draw ---\n");
+                    break;
+                }
                 //check move or !taking!
                 doMove(board, sMv);
             }
@@ -558,7 +593,7 @@ int main()
 		refresh();
 
         sprintf(sendBuff,"%s", "quit__");
-        send(server_fd,sendBuff,strlen(sendBuff)+1,0);
+        if(connected) send(server_fd,sendBuff,strlen(sendBuff)+1,0);
 		close(server_fd);
 
 		connected = false;
