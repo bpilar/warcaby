@@ -1,20 +1,19 @@
-//#define _CRT_SECURE_NO_WARNINGS
- #include <pthread.h>
+
+#include <pthread.h>
 #include <sys/types.h>
- #include <sys/socket.h>
- #include <netinet/in.h>
- #include <netdb.h>
-#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
- #include <unistd.h>
-#include <stdio.h>
- #include <iostream>
+#include <unistd.h>
+#include <iostream>
 #include <utility>
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <ncurses.h>
+//#include <ncurses.h>
 
 
 std::pair<int, int> disToInt(std::string dis)
@@ -51,119 +50,6 @@ std::pair<std::pair<int, int>, std::pair<int, int>> mvToPP(std::string move)
     std::pair<int, int> pFrom = disToInt(from);
     std::pair<int, int> pTo = disToInt(to);
     return std::make_pair(pFrom, pTo);
-}
-
-void printBoard(char board[8][8], int y, int x)
-{
-    move(2, 0);
-    printw("                 ");
-    for (int j = 0; j < 8; j++)
-    {
-        move(j+3, 0);
-        for (int i = 0; i < 8; i++)
-        {
-            if (j == y && i == x)
-            {
-                switch (board[j][i])
-                {
-                case 'w':
-                    printw("|W");
-                    break;
-                case 'v':
-                    printw("|V");
-                    break;
-                case 'b':
-                    printw("|B");
-                    break;
-                case 'a':
-                    printw("|A");
-                    break;
-                case ' ':
-                    printw("|*");
-                    break;
-                default:
-                    break;
-                }
-            }
-            else
-            {
-                printw("|%c", board[j][i]);
-            }
-            
-        }
-        printw("|");
-    }
-}
-
-void printScreen(char board[8][8], bool white, int y, int x, std::string address, std::string port)
-{
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_BLUE, COLOR_BLACK);
-    init_pair(3, COLOR_GREEN, COLOR_BLACK);
-    init_pair(4, COLOR_YELLOW, COLOR_BLACK);
-    attrset(COLOR_PAIR(2));
-    clear();
-    move(0,6);
-    printw("English draughts\n");
-    attrset(COLOR_PAIR(3));
-    move(1,0);
-    if (white)
-    {
-        printw("%s", "White's turn:");
-    }
-    else
-    {
-        printw("%s", "Black's turn:");
-    }
-    attrset(COLOR_PAIR(1));
-    attron(A_UNDERLINE);
-    printBoard(board, y, x);
-    attroff(A_UNDERLINE);
-    attrset(COLOR_PAIR(2));
-    move(4, 20); printw("w - white's man");
-    move(5, 20); printw("v - white's king");
-    move(6, 20); printw("b - black's man");
-    move(7, 20); printw("a - black's king");
-    move(8, 20); printw("HOME to reconnect");
-    move(9, 20); printw("END to quit");
-    move(11,0); printw("Connected to - %s:%s", address.c_str(), port.c_str());
-    attrset(COLOR_PAIR(4));
-    move(12,0);
-    refresh();
-}
-
-std::pair<std::string,std::string> getConParameters()
-{
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_GREEN, COLOR_BLACK);
-    nocbreak();
-    echo();
-    clear();
-    nodelay(stdscr,FALSE);
-    char cAddr[20];
-    char cPort[20];
-
-    move(0,0);
-    attrset(COLOR_PAIR(2));
-    printw("%s", "Address:");
-    attrset(COLOR_PAIR(1));
-    refresh();
-    scanf("%s", cAddr);
-    refresh();
-
-    move(1,0);
-    attrset(COLOR_PAIR(2));
-    printw("%s", "Port:");
-    attrset(COLOR_PAIR(1));
-    refresh();
-    scanf("%s", cPort);
-    refresh();
-    
-    std::string address(cAddr);
-    std::string port(cPort);
-    cbreak();
-    noecho();
-    return std::make_pair(address,port);
 }
 
 void initBoard(char board[8][8])
@@ -402,7 +288,6 @@ void *gameThread(void *t_data)
     int white_fd = (*th_data).desc_1;
     int black_fd = (*th_data).desc_2;
     int curr_fd, wait_fd;
-    //todo
     sprintf(sendBuff,"%s", "white_");
     //printf("sending:%s\n", sendBuff);
     send(white_fd,sendBuff,strlen(sendBuff)+1,0);
@@ -506,7 +391,6 @@ void *gameThread(void *t_data)
         send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
 
         white = !white;
-        clear();
     }
     close(white_fd);
     close(black_fd);
@@ -521,6 +405,12 @@ void *gameThread(void *t_data)
 int main(int argc, char **argv)
 {
 	if(false) printf("%d", argc);
+
+    if (argc != 2)
+   {
+     fprintf(stderr, "Run like: %s port\n", argv[0]);
+     exit(1);
+   }
 
 	struct sockaddr_in sa;
 
