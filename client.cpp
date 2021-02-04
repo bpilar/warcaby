@@ -459,7 +459,6 @@ int main()
 
 			printw("%s\n", "Connecting");
             refresh();
-            //todo
             recv(server_fd,recvBuff,sizeof(recvBuff),0);
             std::string myColor(recvBuff);
             if (!myColor.compare("white_"))
@@ -540,7 +539,6 @@ int main()
             }
             else
             {
-                //todo
                 recv(server_fd,recvBuff,sizeof(recvBuff),0);
                 std::string recvdMsg(recvBuff);
                 if (!recvdMsg.compare("blaWin"))
@@ -611,27 +609,5 @@ int main()
 	refresh();
 	getch();
 	endwin();
-
-    //doMove(board, "B8toC8");
-    //printBoard(board);
-    //if (checkMove(board, "C3toD4", true)) printf("si\n"); else printf("ni\n");
-    //printf("%d\n", findPieces(board, true).size());
-    //doMove(board, "B6toB4");
-    //printBoard(board);
-    //std::vector<std::pair<int, int>> pieces = findPieces(board, true);
-    //std::vector<std::string> captures;
-    //for (std::pair<int, int> i : pieces)
-    //{
-    //    std::vector<std::string> newCaptures = findCaptures(board, i.first, i.second);
-    //    captures.insert(captures.end(), newCaptures.begin(), newCaptures.end());
-    //}
-    ////printf("%d\n", captures.size());
-    //char mv[10];
-    //scanf("%s", &mv);
-    //std::string sMv(mv);
-    //if(!sMv.compare("C5toD5")) printf("si\n");
-    //char* cMv = new char[sMv.length() + 1];
-    //strcpy(cMv, sMv.c_str());
-    //printf(":%s\n", cMv);
 
 }

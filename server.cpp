@@ -380,101 +380,57 @@ void kingsRow(char board[8][8])
     }
 }
 
-int main(int argc, char **argv)
+struct thread_data_t
 {
-	if(false) printf("%d", argc);
-    //printf("%d_%d\n", disToInt("H7").first, disToInt("H7").second);
-    //std::string res = intToDis(1, 1);
-    //char* cRes = new char[res.length() + 1];
-    //strcpy(cRes, res.c_str());
-    //printf("%s\n", cRes);
+    int desc_1;
+    int desc_2;
+};
 
-	struct sockaddr_in sa;
+void *gameThread(void *t_data)
+{
+    pthread_detach(pthread_self());
+    struct thread_data_t *th_data = (struct thread_data_t*)t_data;
 
-	int socket_fd = socket(AF_INET,SOCK_STREAM,0);
-    if (socket_fd == -1)
-    {
-        printf("%s\n", "socket err");
-        return 0;
-    }
-	socklen_t sa_size;
-	int nFoo = 5, fd_1, fd_2;
-
-	memset(&sa, 0 , sizeof(sa));
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(atoi(argv[1]));
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
-	setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&nFoo, sizeof(nFoo));
-	
-	int bindRes = bind(socket_fd,(struct sockaddr*) &sa, sizeof(struct sockaddr));
-    if (bindRes != 0)
-    {
-        printf("%s,%d\n", "Bind err", bindRes);
-        return 0;
-    }
-	int listRes = listen(socket_fd,100);
-    if (listRes != 0)
-    {
-        printf("%s,%d\n", "Listen err", listRes);
-        return 0;
-    }
-
-	fd_1 = accept(socket_fd, (struct sockaddr *) &sa, &sa_size);
-	printf("%s\n", "Got one");
-	fd_2 = accept(socket_fd, (struct sockaddr *) &sa, &sa_size);
-	printf("%s\n", "Got two");
-    if((fd_1 == -1) || (fd_2 == -1))
-    {
-        printf("%s,%d\n", "Listen err", listRes);
-        close(fd_1);
-        close(fd_2);
-        return 0;
-    }
-	
-	char sendBuff[10];
-	char recvBuff[10+1];
+    char sendBuff[10];
+    char recvBuff[10+1];
 
     char board[8][8];
     initBoard(board);
     int countMoves = 0;
     bool white = false;
 
-	int white_fd = fd_1;
-	int black_fd = fd_2;
-	int curr_fd, wait_fd;
-	//todo
+    int white_fd = (*th_data).desc_1;
+    int black_fd = (*th_data).desc_2;
+    int curr_fd, wait_fd;
+    //todo
     sprintf(sendBuff,"%s", "white_");
-	printf("sending:%s\n", sendBuff);
-	send(white_fd,sendBuff,strlen(sendBuff)+1,0);
+    //printf("sending:%s\n", sendBuff);
+    send(white_fd,sendBuff,strlen(sendBuff)+1,0);
     sprintf(sendBuff,"%s", "black_");
-	printf("sending:%s\n", sendBuff);
-	send(black_fd,sendBuff,strlen(sendBuff)+1,0);
-	sprintf(sendBuff,"%s", "Wait__");
-	printf("sending:%s\n", sendBuff);
-	send(white_fd,sendBuff,strlen(sendBuff)+1,0);
+    //printf("sending:%s\n", sendBuff);
+    send(black_fd,sendBuff,strlen(sendBuff)+1,0);
+    sprintf(sendBuff,"%s", "Wait__");
+    //printf("sending:%s\n", sendBuff);
+    send(white_fd,sendBuff,strlen(sendBuff)+1,0);
 
     while (true)
     {
-        //char mv[10];
-        //scanf("%s", mv);
-        //std::string sMv(mv);
 
-		if (white)
-		{
-			curr_fd = white_fd;
-			wait_fd = black_fd;
-		}
-		else
-		{
-			curr_fd = black_fd;
-			wait_fd = white_fd;
-		}
+        if (white)
+        {
+            curr_fd = white_fd;
+            wait_fd = black_fd;
+        }
+        else
+        {
+            curr_fd = black_fd;
+            wait_fd = white_fd;
+        }
 
-		//todo
-        printf("reciving:\n");
-		recv(curr_fd,recvBuff,sizeof(recvBuff),0);
-        printf("recived:%s\n", recvBuff);
-		std::string sMv(recvBuff);
+        //printf("reciving:\n");
+        recv(curr_fd,recvBuff,sizeof(recvBuff),0);
+        //printf("recived:%s\n", recvBuff);
+        std::string sMv(recvBuff);
 
         bool isOK = false;
 
@@ -520,68 +476,110 @@ int main(int argc, char **argv)
         if (countMoves > 15)
         {
             sprintf(sendBuff,"%s", "draw__");
-		    //todo
-            printf("sending:%s\n", sendBuff);
-		    send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+            //printf("sending:%s\n", sendBuff);
+            send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
             send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
-			break;
+            break;
         }
 
         if (!isOK)
         {
             if (white) sprintf(sendBuff,"%s", "blaWin");
             else sprintf(sendBuff,"%s", "whiWin");
-		    //todo
-            printf("sending:%s\n", sendBuff);
-		    send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+            //printf("sending:%s\n", sendBuff);
+            send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
             send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
             break;
         }
         else
         {
             sprintf(sendBuff,"%s", "wait__");
-		    //todo
-            printf("sending:%s\n", sendBuff);
-		    send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
+            //printf("sending:%s\n", sendBuff);
+            send(curr_fd,sendBuff,strlen(sendBuff)+1,0);
         }
         
 
-		char* cMv = new char[sMv.length() + 1];
+        char* cMv = new char[sMv.length() + 1];
         strcpy(cMv, sMv.c_str());
         sprintf(sendBuff,"%s", cMv);
-		//todo
-        printf("sending:%s\n", sendBuff);
-		send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
+        //printf("sending:%s\n", sendBuff);
+        send(wait_fd,sendBuff,strlen(sendBuff)+1,0);
 
         white = !white;
         clear();
     }
-	close(white_fd);
-	close(black_fd);
+    close(white_fd);
+    close(black_fd);
 
-	getch();
+    free(t_data);
+    pthread_exit(NULL);
+}
 
 
-    //doMove(board, "B8toC8");
-    //printBoard(board);
-    //if (checkMove(board, "C3toD4", true)) printf("si\n"); else printf("ni\n");
-    //printf("%d\n", findPieces(board, true).size());
-    //doMove(board, "B6toB4");
-    //printBoard(board);
-    //std::vector<std::pair<int, int>> pieces = findPieces(board, true);
-    //std::vector<std::string> captures;
-    //for (std::pair<int, int> i : pieces)
-    //{
-    //    std::vector<std::string> newCaptures = findCaptures(board, i.first, i.second);
-    //    captures.insert(captures.end(), newCaptures.begin(), newCaptures.end());
-    //}
-    ////printf("%d\n", captures.size());
-    //char mv[10];
-    //scanf("%s", &mv);
-    //std::string sMv(mv);
-    //if(!sMv.compare("C5toD5")) printf("si\n");
-    //char* cMv = new char[sMv.length() + 1];
-    //strcpy(cMv, sMv.c_str());
-    //printf(":%s\n", cMv);
+
+
+int main(int argc, char **argv)
+{
+	if(false) printf("%d", argc);
+
+	struct sockaddr_in sa;
+
+	int socket_fd = socket(AF_INET,SOCK_STREAM,0);
+    if (socket_fd == -1)
+    {
+        printf("%s\n", "socket err");
+        return 0;
+    }
+	int nFoo = 5, fd_1, fd_2;
+
+	memset(&sa, 0 , sizeof(sa));
+	sa.sin_family = AF_INET;
+	sa.sin_port = htons(atoi(argv[1]));
+	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&nFoo, sizeof(nFoo));
+	
+	int bindRes = bind(socket_fd,(struct sockaddr*) &sa, sizeof(struct sockaddr));
+    if (bindRes != 0)
+    {
+        printf("%s,%d\n", "Bind err", bindRes);
+        return 0;
+    }
+	int listRes = listen(socket_fd,100);
+    if (listRes != 0)
+    {
+        printf("%s,%d\n", "Listen err", listRes);
+        return 0;
+    }
+
+    while(true)
+    {
+
+        fd_1 = accept(socket_fd, NULL, NULL);
+        //printf("%s\n", "Got one");
+        fd_2 = accept(socket_fd, NULL, NULL);
+        //printf("%s\n", "Got two");
+        if((fd_1 == -1) || (fd_2 == -1))
+        {
+            printf("%s,%d\n", "Listen err", listRes);
+            close(fd_1);
+            close(fd_2);
+            return 0;
+        }
+
+        int pthread_result = 0;
+        pthread_t theThread;
+        struct thread_data_t *t_data = (struct thread_data_t*)malloc(sizeof(struct thread_data_t));
+        (*t_data).desc_1 = fd_1;
+        (*t_data).desc_2 = fd_2;
+
+        pthread_result = pthread_create(&theThread, NULL, gameThread, (struct thread_data_t* )t_data);
+        if (pthread_result)
+        {
+            printf("Pthread err,%d\n", pthread_result);
+            return 0;
+        }
+
+    }
+    close(socket_fd);
 
 }
